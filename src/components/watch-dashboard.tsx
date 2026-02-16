@@ -147,8 +147,8 @@ function CellWithChange({
   format?: (n: number) => string;
   variant?: "price" | "endo";
 }) {
-  const initNum = initial != null && initial !== "" ? Number(initial) : null;
-  const currNum = current != null && current !== "" ? Number(current) : null;
+  const initNum = initial != null ? Number(initial) : null;
+  const currNum = current != null ? Number(current) : null;
   const hasCurrent = currNum != null && !Number.isNaN(currNum);
   const useRound = variant === "endo";
   const changed = hasCurrent && !numbersEqual(initial, current, useRound);
@@ -494,12 +494,13 @@ export function WatchDashboard() {
         <section className="rounded-lg border border-border/30 bg-card/40 overflow-hidden flex flex-col min-h-0 min-w-0">
           <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-border/20 bg-muted/20 shrink-0">
             <div className="flex items-center gap-1.5 min-w-0">
-              <Circle
-                className={`size-1.5 shrink-0 rounded-full fill-current ${
-                  settings?.running ? "text-neon-green" : "text-muted-foreground/60"
-                }`}
-                title={settings?.running ? "Polling" : "Stopped"}
-              />
+              <span title={settings?.running ? "Polling" : "Stopped"}>
+                <Circle
+                  className={`size-1.5 shrink-0 rounded-full fill-current ${
+                    settings?.running ? "text-neon-green" : "text-muted-foreground/60"
+                  }`}
+                />
+              </span>
               <span className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground truncate">
                 Watched ({watched.length})
               </span>

@@ -223,7 +223,7 @@ export function EndoArbTable() {
         case "reRolls": return d.reRolls ?? 0;
         case "mr": return d.masteryLevel ?? 0;
         case "riven": return d.weaponName || d.weaponUrlName;
-        case "listed": return d.auctionCreatedAt ? new Date(d.auctionCreatedAt as string | number) : null;
+        case "listed": return d.auctionCreatedAt != null ? (d.auctionCreatedAt instanceof Date ? d.auctionCreatedAt : new Date(d.auctionCreatedAt as unknown as string | number)) : null;
         default: return null;
       }
     },

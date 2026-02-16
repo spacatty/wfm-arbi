@@ -126,17 +126,16 @@ export async function runWatchPoll(opts?: WatchPollOptions): Promise<{ checked: 
           if (buyoutChanged) {
             const prevStr = prevBuyout != null ? String(prevBuyout) : null;
             const newStr = newBuyout != null ? String(newBuyout) : null;
+            const priceChangeConditions = [
+              eq(watchEvents.watchedAuctionId, wa.id),
+              eq(watchEvents.kind, "price_change"),
+            ];
+            if (prevStr != null) priceChangeConditions.push(eq(watchEvents.previousValue, prevStr));
+            if (newStr != null) priceChangeConditions.push(eq(watchEvents.currentValue, newStr));
             const [existing] = await db
               .select({ id: watchEvents.id })
               .from(watchEvents)
-              .where(
-                and(
-                  eq(watchEvents.watchedAuctionId, wa.id),
-                  eq(watchEvents.kind, "price_change"),
-                  eq(watchEvents.previousValue, prevStr),
-                  eq(watchEvents.currentValue, newStr)
-                )
-              )
+              .where(and(...priceChangeConditions))
               .limit(1);
             if (!existing) {
               await db.insert(watchEvents).values({

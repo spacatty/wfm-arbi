@@ -217,8 +217,8 @@ export function DealTable() {
         case "endoPerPlat": return d.endoPerPlat ?? 0;
         case "reRolls": return d.reRolls ?? 0;
         case "riven": return d.weaponName || d.weaponUrlName;
-        case "listed": return d.auctionCreatedAt ? new Date(d.auctionCreatedAt as string | number) : null;
-        case "updated": return d.auctionUpdatedAt ? new Date(d.auctionUpdatedAt as string | number) : null;
+        case "listed": return d.auctionCreatedAt != null ? (d.auctionCreatedAt instanceof Date ? d.auctionCreatedAt : new Date(d.auctionCreatedAt as unknown as string | number)) : null;
+        case "updated": return d.auctionUpdatedAt != null ? (d.auctionUpdatedAt instanceof Date ? d.auctionUpdatedAt : new Date(d.auctionUpdatedAt as unknown as string | number)) : null;
         default: return null;
       }
     },
