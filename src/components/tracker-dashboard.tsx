@@ -47,6 +47,8 @@ import {
   BarChart3,
   Calculator,
   ArrowRight,
+  Download,
+  Upload,
 } from "lucide-react";
 import {
   Sheet,
@@ -487,6 +489,57 @@ export function TrackerDashboard() {
     } catch { /* ignore */ } finally { setLoading(false); }
   }, [tab]);
 
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExportPortfolio = useCallback(async () => {
+    setExporting(true);
+    try {
+      const res = await fetch("/api/portfolio/export");
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `portfolio-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Portfolio exported");
+    } catch {
+      toast.error("Failed to export portfolio");
+    } finally {
+      setExporting(false);
+    }
+  }, []);
+
+  const handleImportPortfolio = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      e.target.value = "";
+      setImporting(true);
+      try {
+        const text = await file.text();
+        const json = JSON.parse(text);
+        const res = await fetch("/api/portfolio/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(json),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Import failed");
+        toast.success(`Imported ${data.importedDeals ?? 0} deals, ${data.importedIncome ?? 0} income entries`);
+        fetchData();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to import portfolio");
+      } finally {
+        setImporting(false);
+      }
+    },
+    [fetchData]
+  );
+
   useEffect(() => { fetchData(); }, [fetchData]);
 
   /* ── Deal actions ── */
@@ -602,6 +655,8 @@ export function TrackerDashboard() {
         <div className="flex items-center justify-between sm:justify-start gap-3">
           <h1 className="text-lg font-semibold tracking-tight text-foreground">Portfolio</h1>
           <div className="flex items-center gap-2 sm:hidden">
+            <Button variant="outline" size="sm" className="cursor-pointer" onClick={handleExportPortfolio} disabled={exporting} title="Export"><Download className="size-3.5" /></Button>
+            <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => importInputRef.current?.click()} disabled={importing} title="Import"><Upload className="size-3.5" /></Button>
             <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => setMiscStatsOpen(true)}><BarChart3 className="size-3.5" /></Button>
             <ManualDealDialog onAdded={fetchData} />
           </div>
@@ -620,12 +675,21 @@ export function TrackerDashboard() {
           ))}
         </div>
         <div className="hidden sm:flex items-center gap-2 shrink-0">
+          <Button variant="outline" size="sm" className="cursor-pointer" onClick={handleExportPortfolio} disabled={exporting} title="Export portfolio (JSON)">
+            {exporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+            Export
+          </Button>
+          <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => importInputRef.current?.click()} disabled={importing} title="Import portfolio from JSON">
+            {importing ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
+            Import
+          </Button>
           <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => setMiscStatsOpen(true)}>
             <BarChart3 className="size-3.5" /> Misc Stats
           </Button>
           <ManualDealDialog onAdded={fetchData} />
         </div>
       </header>
+      <input ref={importInputRef} type="file" accept=".json,application/json" className="hidden" onChange={handleImportPortfolio} aria-label="Import portfolio file" />
 
       {/* ── Two-column layout: Endo Bank table | Mod Sales table ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 flex-1 min-h-0 min-w-0">
