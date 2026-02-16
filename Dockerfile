@@ -54,4 +54,5 @@ ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx tsc --project tsconfig.worker.json || true
-CMD ["node", "--import", "tsx", "src/worker/poll.ts"]
+# Generate r10 mod list from WFM on every container start/reboot, then start worker
+CMD ["sh", "-c", "npm run generate:r10-mods && node --import tsx src/worker/poll.ts"]
