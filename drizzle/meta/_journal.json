@@ -1,0 +1,83 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1770728954473,
+      "tag": "0000_handy_zarek",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770757287594,
+      "tag": "0001_medical_vin_gonzales",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770760505115,
+      "tag": "0002_old_alice",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1770772783378,
+      "tag": "0003_lowly_omega_flight",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1770774531201,
+      "tag": "0004_simple_layla_miller",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1770776073123,
+      "tag": "0005_mixed_the_liberteens",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1770811715575,
+      "tag": "0006_loose_lightspeed",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1770859105179,
+      "tag": "0007_tricky_captain_midlands",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1770901074484,
+      "tag": "0008_youthful_marvel_boy",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1771120563959,
+      "tag": "0009_true_paper_doll",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1771123568632,
+      "tag": "0010_watch_events_removed_404",
+      "breakpoints": true
+    }
+  ]
+}

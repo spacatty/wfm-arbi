@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      target: runner
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      # Use service name "db" so the app container can reach PostgreSQL
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      WFM_API_BASE_URL: ${WFM_API_BASE_URL}
+      WFM_PLATFORM: ${WFM_PLATFORM}
+      # Only the worker runs the watch poll so the selected interval is respected
+      DISABLE_APP_WATCH_POLL: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      target: worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      WFM_API_BASE_URL: ${WFM_API_BASE_URL}
+      WFM_PLATFORM: ${WFM_PLATFORM}
+      DEFAULT_SCAN_INTERVAL_MINUTES: ${DEFAULT_SCAN_INTERVAL_MINUTES}
+      DEFAULT_LIQUIDITY_THRESHOLD: ${DEFAULT_LIQUIDITY_THRESHOLD}
+      DEFAULT_ANTIVIRUS_PRICE: ${DEFAULT_ANTIVIRUS_PRICE}
+      DEFAULT_AYATAN_ANASA_PRICE: ${DEFAULT_AYATAN_ANASA_PRICE}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
