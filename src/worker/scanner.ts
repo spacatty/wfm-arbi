@@ -58,7 +58,7 @@ export async function runScan(
     workerCount = 1;
   }
 
-  // Rank Value: use full WFM riven/items list (maximum guns across all Warframe market data)
+  // Rank Value: use full WFM riven/weapons list (maximum guns across all Warframe market data)
   const weapons = await getRivenItems();
   await seedWeaponScanLog(
     weapons.map((w) => ({
@@ -75,7 +75,7 @@ export async function runScan(
   const queueCopy: ScanQueueItem[] = [...queue];
 
   console.log(
-    `[Scanner] Starting ${trigger} scan: ${totalWeapons} weapons (from ${weapons.length} WFM riven items), ${workerCount} worker(s), proxies=${!!proxyManager}`
+    `[Scanner] Starting ${trigger} scan: ${totalWeapons} weapons (from ${weapons.length} WFM riven weapons), ${workerCount} worker(s), proxies=${!!proxyManager}`
   );
 
   const [job] = await db

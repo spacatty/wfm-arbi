@@ -6,8 +6,6 @@ import { HttpsProxyAgent } from "https-proxy-agent";
 import type { Agent } from "node:http";
 import type {
   WfmApiResponse,
-  WfmRivenItemsPayload,
-  WfmRivenAttributesPayload,
   WfmAuctionsPayload,
   WfmAuctionEntry,
   WfmProfileAuctionEntry,
@@ -15,6 +13,9 @@ import type {
   WfmRivenItem,
   WfmRivenAttribute,
   WfmStatisticsPayload,
+  WfmV2ApiResponse,
+  WfmV2RivenWeapon,
+  WfmV2RivenAttribute,
 } from "./types";
 
 const BASE_URL = process.env.WFM_API_BASE_URL || "https://api.warframe.market/v1";
@@ -24,6 +25,8 @@ const PLATFORM = process.env.WFM_PLATFORM || "pc";
 export interface WfmFetchOpts {
   limiter?: TokenBucket;
   proxyUrl?: string;
+  /** API version; default v1 for auctions/profile/statistics. */
+  version?: "v1" | "v2";
 }
 
 /** Thrown when the error is specific to the proxy (bad cert, refused, 403). */
@@ -85,8 +88,7 @@ function buildProxyAgent(proxyUrl: string): Agent {
  *  - 403 Forbidden throws ProxyError immediately (IP is blocked)
  *  - 429 / 503 still retry with backoff
  *
- * When not using a proxy:
- *  - Standard retry logic for all errors
+ * Client errors (4xx except 429) are not retried.
  */
 async function wfmFetch<T>(
   path: string,
@@ -96,7 +98,8 @@ async function wfmFetch<T>(
   const limiter = opts.limiter ?? getRateLimiter();
   await limiter.acquire();
 
-  const url = `${BASE_URL}${path}`;
+  const base = opts.version === "v2" ? BASE_URL_V2 : BASE_URL;
+  const url = `${base}${path}`;
   const headers: Record<string, string> = {
     Platform: PLATFORM,
     Language: "en",
@@ -134,6 +137,11 @@ async function wfmFetch<T>(
         throw new Error(`WFM API error: 503 ${res.statusText} on ${path}`);
       }
 
+      // Other 4xx (including 404) — do not retry; endpoint is gone or bad request
+      if (res.status >= 400 && res.status < 500) {
+        throw new Error(`WFM API error: ${res.status} ${res.statusText} on ${path}`);
+      }
+
       if (!res.ok) {
         throw new Error(`WFM API error: ${res.status} ${res.statusText} on ${path}`);
       }
@@ -150,6 +158,12 @@ async function wfmFetch<T>(
         throw new ProxyError(`Proxy connection failed (${errCode}) on ${path}`);
       }
 
+      // Don't retry permanent client errors (404, etc.)
+      const msg = err instanceof Error ? err.message : String(err);
+      if (/WFM API error: 4\d\d\b/.test(msg) && !/429/.test(msg)) {
+        throw err;
+      }
+
       if (attempt === retries) throw err;
       const backoff = Math.pow(2, attempt + 1) * 1000;
       console.warn(`[WFM] Request failed for ${path}, retrying in ${backoff}ms...`);
@@ -160,20 +174,63 @@ async function wfmFetch<T>(
   throw new Error(`[WFM] All retries exhausted for ${path}`);
 }
 
-/**
- * Get all riven-eligible weapons
- */
-export async function getRivenItems(): Promise<WfmRivenItem[]> {
-  const data = await wfmFetch<WfmApiResponse<WfmRivenItemsPayload>>("/riven/items");
-  return data.payload.items;
+function mapV2Weapon(w: WfmV2RivenWeapon): WfmRivenItem {
+  const en = w.i18n?.en;
+  return {
+    id: w.id,
+    url_name: w.slug,
+    group: w.group,
+    riven_type: w.rivenType,
+    icon: en?.icon ?? "",
+    icon_format: "",
+    thumb: en?.thumb ?? "",
+    item_name: en?.name ?? w.slug,
+  };
+}
+
+function mapV2Attribute(a: WfmV2RivenAttribute): WfmRivenAttribute {
+  const exclusive =
+    Array.isArray(a.exclusiveTo) && a.exclusiveTo.length > 0
+      ? a.exclusiveTo
+      : null;
+  return {
+    id: a.id,
+    url_name: a.slug,
+    group: a.group,
+    prefix: a.prefix ?? "",
+    suffix: a.suffix ?? "",
+    positive_is_negative: !!a.positiveIsNegative,
+    exclusive_to: exclusive,
+    effect: a.i18n?.en?.name ?? a.slug,
+    units: a.unit ?? null,
+    negative_only: !!a.negativeOnly,
+    // v2 dropped search_only; positiveOnly means omit from negative picker
+    search_only: !!a.positiveOnly,
+  };
 }
 
 /**
- * Get all riven attributes
+ * Get all riven-eligible weapons (v2 /riven/weapons).
+ */
+export async function getRivenItems(): Promise<WfmRivenItem[]> {
+  const data = await wfmFetch<WfmV2ApiResponse<WfmV2RivenWeapon[]>>(
+    "/riven/weapons",
+    3,
+    { version: "v2" }
+  );
+  return (data.data ?? []).map(mapV2Weapon);
+}
+
+/**
+ * Get all riven attributes (v2 /riven/attributes).
  */
 export async function getRivenAttributes(): Promise<WfmRivenAttribute[]> {
-  const data = await wfmFetch<WfmApiResponse<WfmRivenAttributesPayload>>("/riven/attributes");
-  return data.payload.attributes;
+  const data = await wfmFetch<WfmV2ApiResponse<WfmV2RivenAttribute[]>>(
+    "/riven/attributes",
+    3,
+    { version: "v2" }
+  );
+  return (data.data ?? []).map(mapV2Attribute);
 }
 
 /**

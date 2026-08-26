@@ -11,7 +11,7 @@ export interface ScanQueueItem {
 /**
  * Build an adaptive scan queue based on weapon tier data.
  * Uses all enabled weapons from weapon_scan_log (populate via POST /api/reference/sync
- * from WFM /riven/items for maximum guns across Warframe market data).
+ * from WFM /riven/weapons for maximum guns across Warframe market data).
  *
  * HOT: had liquid deals in last scan -> always scanned first
  * WARM: had auctions but no liquid deals -> scanned after hot
@@ -55,7 +55,7 @@ export async function buildScanQueue(): Promise<ScanQueueItem[]> {
 }
 
 /**
- * Seed the weapon scan log from WFM riven items list.
+ * Seed the weapon scan log from WFM riven weapons list.
  * Called on first run to populate all weapons.
  * Also updates icon/thumb/rivenType on conflict.
  */

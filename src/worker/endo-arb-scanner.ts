@@ -76,7 +76,7 @@ export async function runEndoArbScan(
     workerCount = 1;
   }
 
-  // Reroll Value: use full WFM riven/items list (maximum guns across all Warframe market data)
+  // Reroll Value: use full WFM riven/weapons list (maximum guns across all Warframe market data)
   const weapons = await getRivenItems();
   await seedWeaponScanLog(
     weapons.map((w) => ({
@@ -93,7 +93,7 @@ export async function runEndoArbScan(
   const queueCopy: ScanQueueItem[] = [...queue];
 
   console.log(
-    `[EndoArb] Starting ${trigger} scan: ${totalWeapons} weapons (from ${weapons.length} WFM riven items), ${workerCount} worker(s), ` +
+    `[EndoArb] Starting ${trigger} scan: ${totalWeapons} weapons (from ${weapons.length} WFM riven weapons), ${workerCount} worker(s), ` +
       `minReRolls=${minReRolls}, proxies=${!!proxyManager}`
   );
 

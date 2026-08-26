@@ -10,11 +10,11 @@ import { getRivenItems, getRivenAttributes } from "@/lib/wfm/client";
  * Syncs reference data (weapons + riven attributes) from Warframe Market API
  * into our local database. This avoids hitting WFM for every autocomplete/search.
  *
- * Weapons: Uses the full /riven/items list so Rank Value and Reroll Value
+ * Weapons: Uses the full v2 /riven/weapons list so Rank Value and Reroll Value
  * scans consider the maximum amount of guns (all riven-eligible weapons) from WFM.
  * All synced weapons are enabled so they are included in the scan queue.
  *
- * Rate-limit safe: makes exactly 2 API calls (items + attributes).
+ * Rate-limit safe: makes exactly 2 API calls (weapons + attributes).
  */
 export async function POST() {
   const session = await auth();
@@ -23,7 +23,7 @@ export async function POST() {
   }
 
   try {
-    // 1. Sync weapons (riven items) — full WFM list = maximum guns for Rank Value & Reroll Value
+    // 1. Sync weapons — full WFM list = maximum guns for Rank Value & Reroll Value
     const wfmItems = await getRivenItems();
     let weaponsSynced = 0;
 
@@ -52,11 +52,16 @@ export async function POST() {
       weaponsSynced++;
     }
 
-    // 2. Sync riven attributes
+    // 2. Sync riven attributes (exclusiveTo stored as JSON array string for multi-type attrs)
     const wfmAttrs = await getRivenAttributes();
     let attrsSynced = 0;
 
     for (const attr of wfmAttrs) {
+      const exclusiveTo =
+        attr.exclusive_to && attr.exclusive_to.length > 0
+          ? JSON.stringify(attr.exclusive_to)
+          : null;
+
       await db
         .insert(rivenAttributes)
         .values({
@@ -70,7 +75,7 @@ export async function POST() {
           positiveIsNegative: attr.positive_is_negative ?? false,
           negativeOnly: attr.negative_only ?? false,
           searchOnly: attr.search_only ?? false,
-          exclusiveTo: attr.exclusive_to ?? null,
+          exclusiveTo,
         })
         .onConflictDoUpdate({
           target: rivenAttributes.urlName,
@@ -84,7 +89,7 @@ export async function POST() {
             positiveIsNegative: attr.positive_is_negative ?? false,
             negativeOnly: attr.negative_only ?? false,
             searchOnly: attr.search_only ?? false,
-            exclusiveTo: attr.exclusive_to ?? null,
+            exclusiveTo,
           },
         });
       attrsSynced++;

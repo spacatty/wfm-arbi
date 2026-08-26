@@ -1,4 +1,5 @@
 // ─── Riven Items (weapons that can have rivens) ─────────────────────
+/** Normalized app shape (mapped from v2 /riven/weapons). */
 export interface WfmRivenItem {
   id: string;
   url_name: string;
@@ -10,7 +11,26 @@ export interface WfmRivenItem {
   item_name: string;
 }
 
+/** Raw v2 /riven/weapons item. */
+export interface WfmV2RivenWeapon {
+  id: string;
+  slug: string;
+  gameRef?: string;
+  group: string;
+  rivenType: string;
+  disposition?: number;
+  reqMasteryRank?: number;
+  i18n?: {
+    en?: {
+      name?: string;
+      icon?: string;
+      thumb?: string;
+    };
+  };
+}
+
 // ─── Riven Attributes ───────────────────────────────────────────────
+/** Normalized app shape (mapped from v2 /riven/attributes). */
 export interface WfmRivenAttribute {
   id: string;
   url_name: string;
@@ -18,11 +38,41 @@ export interface WfmRivenAttribute {
   prefix: string;
   suffix: string;
   positive_is_negative: boolean;
-  exclusive_to: string | null;
+  /** Weapon riven types this attribute applies to; null = universal. */
+  exclusive_to: string[] | null;
   effect: string;
   units: string | null;
   negative_only: boolean;
+  /** Positive-only stats (omit from negative picker). Mapped from v2 positiveOnly. */
   search_only: boolean;
+}
+
+/** Raw v2 /riven/attributes item. */
+export interface WfmV2RivenAttribute {
+  id: string;
+  slug: string;
+  gameRef?: string;
+  group: string;
+  prefix?: string;
+  suffix?: string;
+  unit?: string | null;
+  positiveIsNegative?: boolean | null;
+  negativeOnly?: boolean | null;
+  positiveOnly?: boolean | null;
+  exclusiveTo?: string[] | null;
+  i18n?: {
+    en?: {
+      name?: string;
+      icon?: string;
+      thumb?: string;
+    };
+  };
+}
+
+/** v2 list envelope. */
+export interface WfmV2ApiResponse<T> {
+  apiVersion?: string;
+  data: T;
 }
 
 // ─── Auction Item (the riven mod inside an auction) ─────────────────
@@ -98,14 +148,6 @@ export interface WfmAuctionEntry {
 // ─── API Response Wrappers ──────────────────────────────────────────
 export interface WfmApiResponse<T> {
   payload: T;
-}
-
-export interface WfmRivenItemsPayload {
-  items: WfmRivenItem[];
-}
-
-export interface WfmRivenAttributesPayload {
-  attributes: WfmRivenAttribute[];
 }
 
 export interface WfmAuctionsPayload {
